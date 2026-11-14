@@ -1,0 +1,40 @@
+groups:
+  - name: infrastructure-alerts
+    rules:
+
+      - alert: HighCPUUsage
+        expr: |
+          100 * (
+            1 - avg by(instance) (
+              rate(node_cpu_seconds_total{mode="idle"}[5m])
+            )
+          ) > 80
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: High CPU Usage
+          description: CPU usage is above 80%.
+
+      - alert: ApplicationDown
+        expr: up{job="demo-app"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: Application is down
+          description: Demo application is unreachable.
+
+      - alert: HighErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{status=~"5.."}[5m]))
+            /
+            clamp_min(sum(rate(http_requests_total[5m])), 0.001)
+          ) > 0.001
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: SLO error threshold exceeded
+          description: HTTP 5xx rate is above the 0.1% error budget threshold.
